@@ -1,0 +1,125 @@
+// Add these error handling functions
+function showError(message) {
+    const transcriptionResult = document.getElementById('transcriptionResult');
+    transcriptionResult.innerHTML = `<div class="error">${message}</div>`;
+}
+
+function showStatus(message) {
+    const recordingStatus = document.getElementById('recordingStatus');
+    recordingStatus.textContent = message;
+}
+
+async function sendAudioToServer(audioBlob) {
+    try {
+        if (!(audioBlob instanceof Blob)) {
+            throw new Error('Invalid audio data');
+        }
+
+        const formData = new FormData();
+        formData.append('audio_file', audioBlob, 'recording.wav');
+        
+        showStatus('Transcribing...');
+        
+        const response = await fetch('/transcribe/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Transcription failed');
+        }
+
+        const data = await response.json();
+        if (!data.transcription) {
+            throw new Error('No transcription received');
+        }
+
+        transcriptionResult.textContent = data.transcription;
+        showStatus('Transcription complete');
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError(`Error: ${error.message}`);
+        showStatus('Error occurred');
+    }
+}
+
+// Update file upload handler
+uploadForm.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const fileInput = document.getElementById('audioFileInput');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        showError('Please select an audio file');
+        return;
+    }
+    
+    const audioFile = fileInput.files[0];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (audioFile.size > maxSize) {
+        showError('File size exceeds 10MB limit');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('audio_file', audioFile);
+    
+    showStatus('Transcribing...');
+    
+    try {
+        const response = await fetch('/transcribe/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Upload failed');
+        }
+
+        const data = await response.json();
+        transcriptionResult.textContent = data.transcription;
+        showStatus('Transcription complete');
+
+    } catch (error) {
+        console.error('Error:', error);
+        showError(`Error: ${error.message}`);
+        showStatus('Error occurred');
+    }
+});let mediaRecorder;
+let audioChunks = [];
+
+document.getElementById('recordButton').addEventListener('click', async () => {
+    const button = document.getElementById('recordButton');
+    
+    if (button.textContent === 'Start Recording') {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                await sendAudioToServer(audioBlob);
+                audioChunks = [];
+            };
+            
+            mediaRecorder.start();
+            button.textContent = 'Stop Recording';
+            showStatus('Recording...');
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Could not access microphone. Please ensure microphone permissions are granted.');
+        }
+    } else {
+        mediaRecorder.stop();
+        button.textContent = 'Start Recording';
+        showStatus('Processing recording...');
+    }
+});

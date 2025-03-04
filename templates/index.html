@@ -1,0 +1,64 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text Converter</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Speech-to-Text Converter</h1>
+        
+        <!-- Recording Section -->
+        <div class="recorder-container">
+            <button id="recordButton" class="btn primary">Start Recording</button>
+            <div id="recordingStatus" class="status">Ready to record</div>
+            <div id="recordingTimer" class="timer">00:00</div>
+        </div>
+            <div class="audio-visualizer">
+                <canvas id="visualizer"></canvas>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="transcriptionResult" class="transcription-box"></div>
+        <div class="results-container">
+            <h2>Transcription Result:</h2>
+            <div id="transcriptionResult" class="transcription-box"></div>
+            <button id="copyButton" class="btn secondary" onclick="copyTranscription()">
+                Copy Text
+            </button>
+            <button id="downloadButton" class="btn secondary" onclick="downloadTranscription()">
+                Download Text
+            </button>
+        </div>
+        
+        <!-- Upload Section -->
+        <div class="upload-container">
+            <h2>Or upload an audio file:</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" id="audioFileInput" accept="audio/wav,audio/mp3,audio/ogg,audio/flac">
+                    <small class="file-info">Supported formats: WAV, MP3, OGG, FLAC (max 10MB)</small>
+                </div>
+                <button type="submit" class="btn">Transcribe File</button>
+            </form>
+        </div>
+
+        <!-- Progress and Error Display -->
+        <div id="progressContainer" class="progress-container" style="display: none;">
+            <div class="progress-bar">
+                <div id="progressBar" class="progress" style="width: 0%"></div>
+            </div>
+            <div id="progressStatus">0%</div>
+        </div>
+        
+        <div id="errorContainer" class="error-container" style="display: none;">
+            <div id="errorMessage" class="error"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', path='/scripts.js') }}"></script>
+</body>
+</html>
